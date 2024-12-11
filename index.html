@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyBatis日志SQL转换工具</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- 顶部标题 -->
+    <header>
+        <h1>MyBatis日志SQL转换工具</h1>
+    </header>
+
+    <!-- 主要内容区 -->
+    <main>
+        <div class="container">
+            <!-- 输入区域 -->
+            <div class="input-section">
+                <h2>MyBatis日志</h2>
+                <div class="input-group">
+                    <label for="preparingLog">Preparing:</label>
+                    <textarea id="preparingLog" placeholder="示例: SELECT * FROM users WHERE id = ?"
+                        class="input-textarea"></textarea>
+                </div>
+                <div class="input-group">
+                    <label for="parametersLog">Parameters:</label>
+                    <textarea id="parametersLog" placeholder="示例: 1(Integer)" class="input-textarea"></textarea>
+                </div>
+            </div>
+
+            <!-- 输出区域 -->
+            <div class="output-section">
+                <h2>转换结果</h2>
+                <div id="sqlResult" class="sql-output"></div>
+
+                <!-- 参数表格 -->
+                <div class="params-table">
+                    <h3>参数列表</h3>
+                    <table id="paramsTable">
+                        <thead>
+                            <tr>
+                                <th>参数序号</th>
+                                <th>参数值</th>
+                                <th>参数类型</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 按钮区域 -->
+        <div class="button-group">
+            <button id="convertBtn" class="primary-btn">转换SQL</button>
+            <button id="beautifyBtn" class="secondary-btn">美化SQL</button>
+            <button id="copyBtn" class="secondary-btn">复制SQL</button>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
