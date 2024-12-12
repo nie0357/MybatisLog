@@ -64,20 +64,32 @@ document.addEventListener('DOMContentLoaded', function () {
         const parameters = params ? params.split(',').map(param => {
             const match = param.trim().match(/(.*?)\((.*?)\)/);
             if (match) {
+                const value = match[1].trim();
+                const type = match[2].trim().toLowerCase();
                 return {
-                    value: match[1].trim(),
-                    type: match[2].trim()
+                    value: value,
+                    type: type,
+                    // 判断是否需要添加引号
+                    needQuotes: ['string', 'date', 'timestamp', 'datetime', 'time'].includes(type.toLowerCase())
                 };
             }
             return {
                 value: param.trim(),
-                type: 'Unknown'
+                type: 'Unknown',
+                needQuotes: false
             };
         }) : [];
 
         let resultSQL = sql;
         parameters.forEach((param, index) => {
-            resultSQL = resultSQL.replace('?', param.value);
+            let paramValue = param.value;
+            // 如果参数值已经带有引号，则移除外层引号
+            if (paramValue.startsWith("'") && paramValue.endsWith("'")) {
+                paramValue = paramValue.slice(1, -1);
+            }
+            // 根据类型决定是否添加引号
+            const finalValue = param.needQuotes ? `'${paramValue}'` : paramValue;
+            resultSQL = resultSQL.replace('?', finalValue);
         });
 
         return {
