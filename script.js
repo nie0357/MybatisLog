@@ -27,13 +27,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // 自动复制SQL到剪贴板
         navigator.clipboard.writeText(beautifiedSQL).then(() => {
-            // 创建一个临时提示元素
             const toast = document.createElement('div');
             toast.className = 'toast';
             toast.textContent = 'SQL已自动美化并复制到剪贴板！';
             document.body.appendChild(toast);
 
-            // 2秒后移除提示
             setTimeout(() => {
                 toast.classList.add('toast-hide');
                 setTimeout(() => document.body.removeChild(toast), 300);
@@ -61,16 +59,45 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 处理SQL和参数
     function processSQL(sql, params) {
+        // 清理SQL语句，移除可能被误复制的内容
+        sql = sql.replace(/Preparing:\s*/i, '') // 移除 "Preparing:"
+            .replace(/Parameters:\s*/i, '') // 移除 "Parameters:"
+            .trim();
+
+        // 清理参数字符串
+        params = params.replace(/Parameters:\s*/i, '').trim();
+
+        // 定义需要添加引号的类型列表
+        const quotedTypes = [
+            'string', 'varchar', 'char', 'text', 'longtext',
+            'date', 'datetime', 'timestamp', 'time',
+            'enum', 'set', 'json', 'uuid'
+        ];
+
         const parameters = params ? params.split(',').map(param => {
             const match = param.trim().match(/(.*?)\((.*?)\)/);
             if (match) {
-                const value = match[1].trim();
+                let value = match[1].trim();
                 const type = match[2].trim().toLowerCase();
+
+                // 处理null值
+                if (value.toLowerCase() === 'null') {
+                    return {
+                        value: 'NULL',
+                        type: type,
+                        needQuotes: false
+                    };
+                }
+
+                // 移除已有的引号
+                if (value.startsWith("'") && value.endsWith("'")) {
+                    value = value.slice(1, -1);
+                }
+
                 return {
                     value: value,
                     type: type,
-                    // 判断是否需要添加引号
-                    needQuotes: ['string', 'date', 'timestamp', 'datetime', 'time'].includes(type.toLowerCase())
+                    needQuotes: quotedTypes.includes(type.toLowerCase())
                 };
             }
             return {
@@ -81,16 +108,22 @@ document.addEventListener('DOMContentLoaded', function () {
         }) : [];
 
         let resultSQL = sql;
-        parameters.forEach((param, index) => {
-            let paramValue = param.value;
-            // 如果参数值已经带有引号，则移除外层引号
-            if (paramValue.startsWith("'") && paramValue.endsWith("'")) {
-                paramValue = paramValue.slice(1, -1);
+        let questionMarkCount = (sql.match(/\?/g) || []).length;
+        let paramIndex = 0;
+
+        while (resultSQL.includes('?') && paramIndex < parameters.length) {
+            const param = parameters[paramIndex];
+            let finalValue;
+
+            if (param.value.toLowerCase() === 'null') {
+                finalValue = 'NULL';
+            } else {
+                finalValue = param.needQuotes ? `'${param.value}'` : param.value;
             }
-            // 根据类型决定是否添加引号
-            const finalValue = param.needQuotes ? `'${paramValue}'` : paramValue;
+
             resultSQL = resultSQL.replace('?', finalValue);
-        });
+            paramIndex++;
+        }
 
         return {
             sql: resultSQL,
@@ -114,7 +147,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // SQL美化函数
     function beautifySQL(sql) {
-        // 简单的SQL美化逻辑
         return sql
             .replace(/\s+/g, ' ')
             .replace(/\s*,\s*/g, ',\n  ')
@@ -124,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .replace(/\s*AND\s+/gi, '\n  AND ')
             .replace(/\s*OR\s+/gi, '\n  OR ')
             .replace(/\s*ORDER BY\s+/gi, '\nORDER BY\n  ')
-            .replace(/\s*GROUP BY\s+/gi, '\nGROUP BY\n  ')
+            .replace(/\s*GROUP BY\s+/gi, '\nGROUG BY\n  ')
             .replace(/\s*HAVING\s+/gi, '\nHAVING\n  ')
             .trim();
     }
